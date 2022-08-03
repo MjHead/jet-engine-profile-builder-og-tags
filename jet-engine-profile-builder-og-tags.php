@@ -39,8 +39,25 @@ class JEPB_OG_Tags {
             return;
         }
 
-        $tags       = Jet_Engine\Modules\Profile_Builder\Module::instance()->settings->get( 'og_tags_list' );
+        $subpagenow = get_query_var( Jet_Engine\Modules\Profile_Builder\Module::instance()->rewrite->subpage_var );
+
+        $pages = $this->settings()->get( $this->settings()->user_key, [] );
+
+        if ( ! $subpagenow && ! empty( $pages ) ) {
+
+            $pages      = array_values( $pages );
+            $subpagenow = $pages[0]['slug'];
+
+        }
+
+        $tags       = $this->settings()->get( 'og_tags_list' );
         $this->user = $query->get_queried_user();
+
+        $rewrite = $this->settings()->get( 'rewrite_og_' . $subpagenow );
+
+        if ( $rewrite ) {
+            $tags = $this->settings()->get( 'og_tags_' . $subpagenow );
+        }
 
         if ( ! empty( $tags ) ) {
             $this->tags = $this->parse_tags( $tags );
@@ -48,6 +65,10 @@ class JEPB_OG_Tags {
             add_action( 'wp_head', [ $this, 'print_tags' ] );
         }
 
+    }
+
+    public function settings() {
+        return Jet_Engine\Modules\Profile_Builder\Module::instance()->settings;
     }
 
     public function rewrite_rank_math_tags() {
@@ -82,10 +103,21 @@ class JEPB_OG_Tags {
     }
 
     public function prepare_value( $raw_value, $key ) {
+        
+        $values = explode( '+', $raw_value );
+        $values = array_map( function( $single_value ) use ( $key ) {
+            return $this->prepare_single_value( $single_value, $key );
+        }, $values );
+
+        return implode( '', $values );
+
+    }
+
+    public function prepare_single_value( $raw_value, $key ) {
        
         $value_data = explode( '.', $raw_value );
         $value_key  = $value_data[0];
-        $value_prop = $value_data[1];
+        $value_prop = isset( $value_data[1] ) ? $value_data[1] : false;
 
         $result = null;
 
@@ -100,6 +132,10 @@ class JEPB_OG_Tags {
             
             case 'user_field':
                 $result = get_user_meta( $this->user->ID, $value_prop, true );
+                break;
+
+            default:
+                $result = $raw_value;
                 break;
         }
 

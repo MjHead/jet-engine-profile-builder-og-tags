@@ -37,6 +37,24 @@
 			</div>
 		</div>
 	</div>
+	<div v-for="page in settings.user_page_structure">
+		<cx-vui-switcher
+			:label="'Rewrite OG tags for `' + page.title + '` page'"
+			description="Set specific OG tags structure for this page"
+			:wrapper-css="[ 'equalwidth' ]"
+			v-model="settings[ 'rewrite_og_' + page.slug ]"
+		></cx-vui-switcher>
+		<cx-vui-textarea
+			label="OG Tags list"
+			description="Setup OG tags in next format: og:title=user.display_name. Put one tag per line"
+			rows="6"
+			:wrapper-css="[ 'equalwidth' ]"
+			size="fullwidth"
+			v-if="settings[ 'rewrite_og_' + page.slug ]"
+			v-model="settings[ 'og_tags_' + page.slug ]"
+		></cx-vui-textarea>
+	</div>
+	
 	<cx-vui-component-wrapper
 		:wrapper-css="[ 'vertical-fullwidth' ]"
 	>
